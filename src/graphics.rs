@@ -1017,6 +1017,59 @@ impl GraphicsContext {
         }
     }
 
+    pub fn apply_uniform<U>(&mut self, uniform: &U, id: usize) {
+        self.apply_uniform_from_bytes(uniform as *const _ as *const u8, id)
+    }
+
+    #[doc(hidden)]
+    /// Apply uniforms data from array of bytes with very special layout.
+    /// Hidden because `apply_uniform` is the recommended and safer way to work with uniforms.
+    pub fn apply_uniform_from_bytes(&mut self, uniform_ptr: *const u8, id: usize) {
+        let pip = &self.pipelines[self.cache.cur_pipeline.unwrap().0];
+        let shader = &self.shaders[pip.shader.0];
+        {
+            let uniform = &shader.uniforms[id];
+            use UniformType::*;
+
+            unsafe {
+                let data = uniform_ptr as *const f32;
+                let data_int = uniform_ptr as *const i32;
+
+                if let Some(gl_loc) = uniform.gl_loc {
+                    match uniform.uniform_type {
+                        Float1 => {
+                            glUniform1fv(gl_loc, uniform.array_count, data);
+                        }
+                        Float2 => {
+                            glUniform2fv(gl_loc, uniform.array_count, data);
+                        }
+                        Float3 => {
+                            glUniform3fv(gl_loc, uniform.array_count, data);
+                        }
+                        Float4 => {
+                            glUniform4fv(gl_loc, uniform.array_count, data);
+                        }
+                        Int1 => {
+                            glUniform1iv(gl_loc, uniform.array_count, data_int);
+                        }
+                        Int2 => {
+                            glUniform2iv(gl_loc, uniform.array_count, data_int);
+                        }
+                        Int3 => {
+                            glUniform3iv(gl_loc, uniform.array_count, data_int);
+                        }
+                        Int4 => {
+                            glUniform4iv(gl_loc, uniform.array_count, data_int);
+                        }
+                        Mat4 => {
+                            glUniformMatrix4fv(gl_loc, uniform.array_count, 0, data);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     pub fn clear(
         &self,
         color: Option<(f32, f32, f32, f32)>,
