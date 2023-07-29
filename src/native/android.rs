@@ -22,7 +22,7 @@ pub unsafe extern "C" fn JNI_OnLoad(
     _: std::ffi::c_void,
 ) -> ndk_sys::jint {
     VM = vm as *mut _ as _;
-    super::jni_onload(vm as _);
+    super::jni_sideload(vm as _);
 
     ndk_sys::JNI_VERSION_1_6 as _
 }
@@ -454,7 +454,7 @@ where
 extern "C" fn jni_on_load(vm: *mut std::ffi::c_void) {
     unsafe {
         VM = vm as _;
-        super::jni_onload(vm as _);
+        super::jni_sideload(vm as _);
     }
 }
 
