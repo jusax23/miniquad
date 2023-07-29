@@ -5,7 +5,7 @@ pub mod conf;
 mod event;
 pub mod fs;
 pub mod graphics;
-mod native;
+pub mod native;
 
 #[cfg(feature = "log-impl")]
 pub mod log;
