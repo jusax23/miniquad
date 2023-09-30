@@ -166,12 +166,9 @@ impl X11Display {
         }
     }
 
-    // TODO: right now it just exits early if fullscreen is false.
-    // should be able to able to go back from fullscreen to windowed instead
+    // Not 100% this is the correct way to leave fullscreen, but seems to work.
+    // TODO: Fix: On going back to windowed Title disappears and window size has changed.
     unsafe fn set_fullscreen(&mut self, window: Window, fullscreen: bool) {
-        if !fullscreen {
-            return;
-        }
         let wm_state = (self.libx11.XInternAtom)(
             self.display,
             b"_NET_WM_STATE\x00" as *const u8 as *const _,
@@ -191,7 +188,7 @@ impl X11Display {
             (self.libx11.XUnmapWindow)(self.display, window);
             (self.libx11.XSync)(self.display, false as _);
 
-            let mut atoms: [Atom; 2] = [wm_fullscreen, 0 as _];
+            let mut atoms: [Atom; 2] = [if fullscreen { wm_fullscreen } else { 0 as _ }, 0 as _];
             (self.libx11.XChangeProperty)(
                 self.display,
                 window,
@@ -200,7 +197,7 @@ impl X11Display {
                 32,
                 PropModeReplace,
                 atoms.as_mut_ptr() as *mut _ as *mut _,
-                1,
+                if fullscreen { 1 } else { 0 },
             );
             (self.libx11.XMapWindow)(self.display, window);
             (self.libx11.XRaiseWindow)(self.display, window);
@@ -212,7 +209,8 @@ impl X11Display {
         {
             let mut data = [0isize; 5];
 
-            data[0] = 1;
+            // changing this 1 to 0 seems to help with closing fullscreen
+            data[0] = if fullscreen { 1 } else { 0 };
             data[1] = wm_fullscreen as isize;
             data[2] = 0;
 
